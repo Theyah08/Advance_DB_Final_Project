@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Account - Prosfora Gift Shop POS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-card" style="max-width: 480px;">
+        <div class="auth-header">
+            <div class="brand-icon">P</div>
+            <h2>Create New Account</h2>
+            <p>Join Prosfora Gift Shop Management System</p>
+        </div>
+
+        <div class="auth-body">
+            <!-- Flash Notification Messages -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <span>{{ message }}</span>
+                                <button type="button" class="alert-close">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <form action="{{ url_for('register') }}" method="POST">
+                <div class="form-group">
+                    <label for="full_name" class="form-label required">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" class="form-control" placeholder="e.g. Maria Santos" required autofocus>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="username" class="form-label required">Username</label>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="e.g. maria_s" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label required">Email Address</label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="maria@prosfora.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="role" class="form-label required">Role</label>
+                    <select id="role" name="role" class="form-control" required>
+                        <option value="cashier" selected>Cashier (POS & Sales)</option>
+                        <option value="admin">Admin (Full System Access)</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password" class="form-label required">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label required">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 0.5rem;">
+                    Register Account
+                </button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            <span>Already have an account? </span>
+            <a href="{{ url_for('login') }}" style="font-weight: 600;">Back to Login</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

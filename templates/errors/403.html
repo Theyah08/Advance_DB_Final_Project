@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden - Prosfora Gift Shop POS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-card" style="text-align: center;">
+        <div class="auth-header">
+            <div class="brand-icon" style="background: var(--danger);">!</div>
+            <h2 style="color: var(--danger);">403 - Access Denied</h2>
+            <p>You do not have permission to access this module.</p>
+        </div>
+        <div class="auth-body">
+            <p style="color: var(--muted-text); margin-bottom: 1.5rem;">
+                This page requires administrative privileges. Cashier accounts have access only to the POS and permitted sales views.
+            </p>
+            <a href="{{ url_for('products_list') }}" class="btn btn-primary" style="width: 100%;">
+                Return to Product Catalog
+            </a>
+        </div>
+    </div>
+</body>
+</html>

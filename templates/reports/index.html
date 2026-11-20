@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics - Prosfora Gift Shop POS{% endblock %}
+{% block header_title %}Reports & Business Analytics{% endblock %}
+{% block header_subtitle %}Comprehensive sales trends, revenue analytics, best-selling gifts, and inventory metrics{% endblock %}
+
+{% block content %}
+<!-- Period Selector & Date Range Toolbar -->
+<div class="card">
+    <div class="card-body" style="padding: 1.25rem 1.75rem;">
+        <form action="{{ url_for('reports_overview') }}" method="GET" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <!-- Period Tabs -->
+            <div class="period-tabs-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <span style="font-weight: 700; color: var(--soft-purple); font-size: 0.9rem; margin-right: 0.25rem;">Reporting Period:</span>
+                <a href="{{ url_for('reports_overview', period='today') }}" class="btn {% if period == 'today' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+                    Today
+                </a>
+                <a href="{{ url_for('reports_overview', period='week') }}" class="btn {% if period == 'week' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+                    This Week (7 Days)
+                </a>
+                <a href="{{ url_for('reports_overview', period='month') }}" class="btn {% if period == 'month' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+                    This Month (30 Days)
+                </a>
+            </div>
+
+            <!-- Custom Date Range & Export Actions -->
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <label style="font-size: 0.8rem; color: var(--muted-text); font-weight: 600;">Custom:</label>
+                    <input type="date" name="from_date" class="form-control" style="width: auto; padding: 0.4rem 0.6rem; font-size: 0.85rem;" value="{{ from_date }}">
+                    <span>to</span>
+                    <input type="date" name="to_date" class="form-control" style="width: auto; padding: 0.4rem 0.6rem; font-size: 0.85rem;" value="{{ to_date }}">
+                    <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+                </div>
+
+                <!-- Export Data Button -->
+                <a href="{{ url_for('export_sales_csv', period=period, from_date=from_date, to_date=to_date) }}" class="btn btn-outline-primary btn-sm" title="Download CSV Spreadsheet">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Export CSV</span>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="metrics-grid">
+    <div class="metric-card card-purple">
+        <div class="metric-info">
+            <h3>Period Revenue</h3>
+            <div class="metric-value">₱{{ "{:,.2f}".format(report_summary.total_revenue or 0.0) }}</div>
+            <div class="metric-subtitle">{{ period_label }} Gross Sales</div>
+        </div>
+        <div class="metric-icon-wrap icon-purple">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="metric-card card-blue">
+        <div class="metric-info">
+            <h3>Completed Orders</h3>
+            <div class="metric-value">{{ report_summary.total_transactions or 0 }}</div>
+            <div class="metric-subtitle">Transactions Processed</div>
+        </div>
+        <div class="metric-icon-wrap icon-blue">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="metric-card card-pink">
+        <div class="metric-info">
+            <h3>Average Order Value</h3>
+            <div class="metric-value">₱{{ "{:,.2f}".format(report_summary.avg_order_value or 0.0) }}</div>
+            <div class="metric-subtitle">Revenue per customer</div>
+        </div>
+        <div class="metric-icon-wrap icon-pink">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="metric-card card-warning">
+        <div class="metric-info">
+            <h3>Units Sold</h3>
+            <div class="metric-value">{{ report_summary.total_units_sold or 0 }}</div>
+            <div class="metric-subtitle">Individual items purchased</div>
+        </div>
+        <div class="metric-icon-wrap icon-warning">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- Main Row: Best Sellers Table & Visual Chart -->
+<div class="responsive-split-grid reports-split">
+    <!-- Best-Selling Products Table -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                <span>Top Best-Selling Products</span>
+            </div>
+            <span class="badge badge-info">Ranked by Units Sold</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive" style="border: none;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Units Sold</th>
+                            <th>Total Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if best_sellers %}
+                            {% for prod in best_sellers %}
+                            <tr>
+                                <td>
+                                    <span class="badge {% if loop.index == 1 %}badge-warning{% elif loop.index <= 3 %}badge-info{% else %}badge-secondary{% endif %}" style="font-size: 0.85rem; font-weight: 700;">
+                                        #{{ loop.index }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--soft-purple);">{{ prod.name }}</strong>
+                                </td>
+                                <td><span class="badge badge-secondary">{{ prod.category_name or 'Uncategorized' }}</span></td>
+                                <td><strong>{{ prod.units_sold }}</strong> units</td>
+                                <td><strong>₱{{ "{:,.2f}".format(prod.total_revenue) }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--muted-text);">
+                                    No product sales recorded for this period.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Chart: Sales Distribution By Category -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                <span>Sales Share by Category</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if category_sales %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% set max_cat_rev = category_sales[0].cat_revenue if category_sales else 1 %}
+                    {% for cat in category_sales %}
+                    {% set pct = ((cat.cat_revenue / (report_summary.total_revenue or 1)) * 100)|round(1) %}
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;">
+                            <span>{{ cat.category_name }}</span>
+                            <span style="color: var(--soft-purple);">₱{{ "{:,.2f}".format(cat.cat_revenue) }} ({{ pct }}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 10px; background-color: var(--light-pink); border-radius: 6px; overflow: hidden;">
+                            <div style="width: {{ pct }}%; height: 100%; background: linear-gradient(90deg, var(--soft-pink), var(--soft-purple)); border-radius: 6px;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--muted-text);">
+                    <p style="font-size: 2rem; margin-bottom: 0.5rem;">📊</p>
+                    <p>No category transactions recorded for this time range.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Daily Sales Breakdown Table -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <div class="card-title">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Daily Sales Activity Report</span>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive" style="border: none;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Transactions Count</th>
+                        <th>Total Subtotal</th>
+                        <th>Total VAT (12%)</th>
+                        <th>Gross Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if daily_records %}
+                        {% for day in daily_records %}
+                        <tr>
+                            <td><strong>{{ day.sale_day }}</strong></td>
+                            <td>{{ day.tx_count }} orders</td>
+                            <td>₱{{ "{:,.2f}".format(day.subtotal) }}</td>
+                            <td>₱{{ "{:,.2f}".format(day.tax) }}</td>
+                            <td><strong style="color: var(--soft-purple);">₱{{ "{:,.2f}".format(day.total) }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--muted-text);">
+                                No daily activity logs found for this filter range.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

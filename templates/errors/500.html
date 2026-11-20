@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 Server Error - Prosfora Gift Shop POS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-card" style="text-align: center;">
+        <div class="auth-header">
+            <div class="brand-icon" style="background: var(--danger);">500</div>
+            <h2>Internal Server Error</h2>
+            <p>An unexpected problem occurred while processing your request.</p>
+        </div>
+        <div class="auth-body">
+            <p style="color: var(--muted-text); margin-bottom: 1.5rem;">
+                Please verify that the database server is running properly or check the system logs.
+            </p>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="width: 100%;">
+                Return to Dashboard
+            </a>
+        </div>
+    </div>
+</body>
+</html>

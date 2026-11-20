@@ -1,0 +1,79 @@
+PROSFORA GIFT SHOP APP
+5-MINUTE PRESENTATION SCRIPT
+============================
+
+INTRODUCTION
+------------
+Good day. This presentation introduces Prosfora, a web-based Point of Sale
+and inventory management app for a gift shop. Staff can manage products and
+categories, check stock, process sales and payments, and review reports. The
+database links each sale to its cashier, the items purchased, the payment,
+and any stock changes.
+
+RELATIONAL DESIGN AND NORMALIZATION
+-----------------------------------
+In schema.sql, lines 10-94 define the main tables. Instead of storing
+everything in one large table, the app separates users, products, categories,
+inventory, sales, sale items, payments, and inventory movements. Foreign keys
+connect these records. For example, sale_items references a sale and product
+at lines 78-85.
+
+Each sale-item row represents one product and quantity, rather than a list of
+products in one field. This illustrates atomic values, a key idea in First
+Normal Form. The separate tables also help reduce repeated information.
+However, the schema by itself does not prove full 2NF or 3NF; BCNF and 4NF
+are not explicitly demonstrated with dependency examples.
+
+INDEXING
+--------
+The indexes in schema.sql, lines 96-114, help common searches and reports.
+For example, line 98 indexes product barcodes for POS lookups, line 100
+indexes product categories for filtering and joins, and line 102 indexes
+sale dates for time-based reports. Indexes can make reads faster, but they
+also take storage and add work when data changes.
+
+REPORTS AND ADVANCED SQL
+------------------------
+The app's reports in app.py, lines 1001-1055, use joins and aggregation.
+They calculate sales totals, average order value, best sellers, category
+revenue, and daily sales using functions such as SUM, COUNT, AVG, and
+GROUP BY.
+
+schema.sql, lines 130-149, also defines GenerateRegionalReport. It filters
+sales by dates and calculates transaction and revenue aggregates. Unlike
+the lecture example, this project does not build a temporary summary table
+with CREATE TEMPORARY TABLE and TRUNCATE; the app's reports use SELECT
+queries instead.
+
+STORED TOTALS AND DENORMALIZATION
+---------------------------------
+The sales table stores subtotal, discount, tax, and total at schema.sql,
+lines 66-76. Individual item subtotals are stored in sale_items at lines
+78-85. These order totals are summary values based on the purchased items.
+Storing them makes receipts and reports easier to retrieve, but they must
+remain consistent with the sale items. database.py, lines 281-298, calculates
+the amounts, then lines 314-324 save the sale.
+
+SECURITY AND TRANSACTIONS
+-------------------------
+database.py, lines 108-128, passes query values separately from SQL text.
+This parameterized-query approach helps protect user input from SQL injection.
+In schema.sql, lines 117-128, separate database roles demonstrate least
+privilege by restricting some direct access. Lines 130-178 show example
+stored routines and execution permissions.
+
+During checkout, database.py validates products and stock, calculates totals,
+and records the sale, its items, payment, and stock movement. The transaction
+commits on success at line 364 and rolls back on error at lines 383-385.
+PostgreSQL also uses a row lock in the product lookup around lines 258-267 to
+help prevent simultaneous checkouts from overselling the same stock.
+
+CONCLUSION
+----------
+Prosfora demonstrates how relational tables, constraints, indexes, reporting
+queries, security practices, and transactions work together in a practical
+application. One implementation detail to remember is that database.py,
+lines 38-82, can fall back to SQLite, while schema.sql uses PostgreSQL-specific
+features such as roles and stored routines. Also, the stored routines in
+schema.sql are examples; the app's checkout and reporting logic runs in
+Python/database.py and app.py.

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory & Stock Control - Prosfora Gift Shop POS{% endblock %}
+{% block header_title %}Inventory & Stock Control{% endblock %}
+{% block header_subtitle %}Monitor stock health, execute stock-in/stock-out adjustments, and view complete audit trails{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div class="metrics-grid">
+    <div class="metric-card card-purple">
+        <div class="metric-info">
+            <h3>Total Inventory Stock</h3>
+            <div class="metric-value">{{ total_units }} units</div>
+            <div class="metric-subtitle">Across {{ inventory_items|length }} tracked gift items</div>
+        </div>
+        <div class="metric-icon-wrap icon-purple">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="metric-card card-warning">
+        <div class="metric-info">
+            <h3>Restock Threshold Alert</h3>
+            <div class="metric-value">{{ low_stock_count }} items</div>
+            <div class="metric-subtitle">At or below reorder level</div>
+        </div>
+        <div class="metric-icon-wrap icon-warning">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="metric-card card-blue">
+        <div class="metric-info">
+            <h3>Inventory Valuation (Cost)</h3>
+            <div class="metric-value">₱{{ "{:,.2f}".format(total_val) }}</div>
+            <div class="metric-subtitle">Total store investment</div>
+        </div>
+        <div class="metric-icon-wrap icon-blue">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Adjustment Operations Bar -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span>Live Stock Levels</span>
+        </div>
+
+        {% if session.get('role') == 'admin' %}
+        <button type="button" class="btn btn-primary" onclick="openModal('stockAdjustmentModal');">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>Record Stock Movement</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Details</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Reorder Threshold</th>
+                        <th>Stock Health</th>
+                        <th>Unit Cost</th>
+                        <th>Retail Price</th>
+                        <th>Total Inventory Cost</th>
+                        {% if session.get('role') == 'admin' %}
+                        <th style="text-align: right;">Quick Action</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory_items %}
+                    {% set is_low = item.current_stock <= item.reorder_level %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--soft-purple);">{{ item.product_name }}</strong>
+                            {% if item.barcode %}
+                            <div style="font-size: 0.75rem; color: var(--muted-text);">SKU: {{ item.barcode }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-secondary">{{ item.category_name or 'Uncategorized' }}</span></td>
+                        <td>
+                            <strong style="font-size: 1rem; color: var(--dark-text);">{{ item.current_stock }}</strong> units
+                        </td>
+                        <td>{{ item.reorder_level }} units</td>
+                        <td>
+                            {% if is_low %}
+                            <span class="badge badge-warning">⚠️ Low Stock</span>
+                            {% else %}
+                            <span class="badge badge-success">✓ Sufficient</span>
+                            {% endif %}
+                        </td>
+                        <td>₱{{ "{:,.2f}".format(item.cost_price) }}</td>
+                        <td>₱{{ "{:,.2f}".format(item.selling_price) }}</td>
+                        <td><strong>₱{{ "{:,.2f}".format(item.current_stock * item.cost_price) }}</strong></td>
+                        {% if session.get('role') == 'admin' %}
+                        <td style="text-align: right;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickAdjustModal({{ item.product_id }}, '{{ item.product_name|replace("'", "\\'") }}', {{ item.current_stock }});">
+                                Adjust Stock
+                            </button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Movement Audit Trail History -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Inventory Movement History (Audit Trail)</span>
+        </div>
+        <span class="badge badge-secondary">Real-time Log</span>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Product</th>
+                        <th>Movement Type</th>
+                        <th>Quantity</th>
+                        <th>Reference / Note</th>
+                        <th>Handled By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if movements %}
+                        {% for mov in movements %}
+                        <tr>
+                            <td>{{ mov.created_at }}</td>
+                            <td><strong>{{ mov.product_name }}</strong></td>
+                            <td>
+                                {% if mov.movement_type == 'in' %}
+                                <span class="badge badge-success">+ Stock In</span>
+                                {% elif mov.movement_type == 'out' %}
+                                <span class="badge badge-danger">− Stock Out</span>
+                                {% else %}
+                                <span class="badge badge-info">± Adjustment</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong style="font-size: 0.95rem;">{{ mov.quantity }} units</strong>
+                            </td>
+                            <td>{{ mov.reference_note or '—' }}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                                    <div class="user-avatar" style="width: 22px; height: 22px; font-size: 0.65rem;">
+                                        {{ (mov.staff_name or 'A')[0]|upper }}
+                                    </div>
+                                    <span>{{ mov.staff_name or 'System Administrator' }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--muted-text); padding: 2rem;">
+                                No stock movements recorded yet.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL: Stock Movement (Stock-In, Stock-Out, Adjustment)
+     ========================================================================= -->
+<div class="modal-overlay" id="stockAdjustmentModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 class="modal-title">Record Stock Movement</h3>
+            <button type="button" class="modal-close-btn" data-dismiss="modal">&times;</button>
+        </div>
+        <form action="{{ url_for('inventory_adjust') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="adjust_product_id" class="form-label required">Select Product</label>
+                    <select id="adjust_product_id" name="product_id" class="form-control" required>
+                        <option value="">-- Choose Product --</option>
+                        {% for it in inventory_items %}
+                        <option value="{{ it.product_id }}">{{ it.product_name }} (Current: {{ it.current_stock }} units)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adjustment_type" class="form-label required">Movement Type</label>
+                        <select id="adjustment_type" name="movement_type" class="form-control" required>
+                            <option value="in" selected>Stock-In (Supplier Restock / Received)</option>
+                            <option value="out">Stock-Out (Damage / Expired / Return)</option>
+                            <option value="adjustment">Direct Audit Count Correction</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adjust_quantity" class="form-label required">Quantity (Units)</label>
+                        <input type="number" min="1" id="adjust_quantity" name="quantity" class="form-control" placeholder="e.g. 10" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adjust_notes" class="form-label required">Reference Reason / Invoice Note</label>
+                    <input type="text" id="adjust_notes" name="notes" class="form-control" placeholder="e.g. PO-8924 Supplier Restock or Damaged during display" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Commit Stock Movement</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openQuickAdjustModal(productId, productName, currentStock) {
+    const sel = document.getElementById('adjust_product_id');
+    if (sel) {
+        sel.value = productId;
+    }
+    openModal('stockAdjustmentModal');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #{{ sale.invoice_number }} - Prosfora Gift Shop</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #F4F4F6;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .receipt-action-bar {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-action-bar no-print">
+        <a href="{{ url_for('sales_history') }}" class="btn btn-secondary">
+            &larr; Back to Sales History
+        </a>
+        <button type="button" class="btn btn-primary" onclick="window.print();">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span>Print Receipt</span>
+        </button>
+    </div>
+
+    <!-- Official Thermal Receipt Layout -->
+    <div class="receipt-paper">
+        <div class="receipt-header">
+            <h3>PROSFORA GIFT SHOP</h3>
+            <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">Boutique Gifts & Curated Treasures</div>
+            <div style="font-size: 0.75rem; color: #555;">Tel: (02) 8123-4567 | VAT Reg: 123-456-789-000</div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-meta-line">
+                <span>Invoice:</span>
+                <strong>{{ sale.invoice_number }}</strong>
+            </div>
+            <div class="receipt-meta-line">
+                <span>Date:</span>
+                <span>{{ sale.created_at }}</span>
+            </div>
+            <div class="receipt-meta-line">
+                <span>Cashier:</span>
+                <span>{{ sale.cashier_name or 'Cashier' }}</span>
+            </div>
+        </div>
+
+        <table class="receipt-table">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Item</th>
+                    <th style="text-align: center;">Qty</th>
+                    <th style="text-align: right;">Price</th>
+                    <th style="text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale.line_items %}
+                <tr>
+                    <td style="text-align: left;">
+                        <div style="font-weight: 700; color: #111;">{{ item.product_name }}</div>
+                        {% if item.barcode %}
+                        <div style="font-size: 0.75rem; color: #666; margin-top: 0.15rem;">{{ item.barcode }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; vertical-align: top;">{{ item.quantity }}</td>
+                    <td style="text-align: right; vertical-align: top;">₱{{ "{:,.2f}".format(item.unit_price) }}</td>
+                    <td style="text-align: right; vertical-align: top; font-weight: 600;">₱{{ "{:,.2f}".format(item.subtotal) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-summary-line">
+            <span>Subtotal:</span>
+            <span>₱{{ "{:,.2f}".format(sale.subtotal) }}</span>
+        </div>
+        <div class="receipt-summary-line">
+            <span>VAT (12%):</span>
+            <span>₱{{ "{:,.2f}".format(sale.tax_amount) }}</span>
+        </div>
+        <div class="receipt-summary-line">
+            <span>Discount:</span>
+            <span>₱{{ "{:,.2f}".format(sale.discount_amount) }}</span>
+        </div>
+        <div class="receipt-total-line">
+            <span>TOTAL DUE:</span>
+            <span>₱{{ "{:,.2f}".format(sale.total_amount) }}</span>
+        </div>
+        <div class="receipt-summary-line" style="margin-top: 0.35rem;">
+            <span>Cash Received:</span>
+            <span>₱{{ "{:,.2f}".format(sale.amount_tendered or sale.total_amount) }}</span>
+        </div>
+        <div class="receipt-summary-line" style="font-weight: 700; font-size: 0.95rem;">
+            <span>CHANGE:</span>
+            <span>₱{{ "{:,.2f}".format(sale.change_amount or 0.0) }}</span>
+        </div>
+
+        <div class="receipt-footer">
+            <div style="font-weight: 600; margin-bottom: 0.35rem;">Thank you for supporting Prosfora Gift Shop!</div>
+            <div>Please keep this receipt for returns or exchanges within 7 days.</div>
+            <div style="margin-top: 0.6rem; font-size: 0.7rem; color: #777;">Powered by Prosfora POS System</div>
+        </div>
+    </div>
+
+    {% if auto_print %}
+    <script>
+        window.addEventListener('load', () => {
+            window.print();
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

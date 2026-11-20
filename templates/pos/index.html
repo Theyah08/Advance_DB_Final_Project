@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}POS Terminal - Prosfora Gift Shop POS{% endblock %}
+{% block header_title %}Point of Sale Terminal{% endblock %}
+{% block header_subtitle %}Process customer purchases, scan barcodes, and settle cash payments{% endblock %}
+
+{% block content %}
+<div class="pos-container">
+    <!-- LEFT PANEL: Product Catalog, Barcode Scanner & Search -->
+    <div class="pos-left-panel">
+        <!-- Controls Bar: Barcode Scanner & Search Input -->
+        <div class="pos-controls-bar">
+            <!-- Hardware Barcode Scanner Target Input -->
+            <div class="barcode-scanner-box">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                <input type="text" id="posBarcodeInput" class="form-control" placeholder="Scan Barcode (Press Enter)..." autocomplete="off" autofocus>
+            </div>
+
+            <!-- Product Name / Keyword Search -->
+            <div class="search-box" style="flex: 1.5; min-width: 220px;">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input type="text" id="posSearchInput" class="search-input" placeholder="Search product name or keyword..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Category Pills Filter Bar -->
+        <div class="category-pills-bar">
+            <button type="button" class="category-pill active" data-cat="all" onclick="filterByCategory('all', this)">
+                All Categories ({{ products|length }})
+            </button>
+            {% for cat in categories %}
+            <button type="button" class="category-pill" data-cat="{{ cat.name }}" onclick="filterByCategory('{{ cat.name }}', this)">
+                {{ cat.name }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Available Products Grid -->
+        <div class="pos-products-grid" id="posProductsGrid">
+            {% for prod in products %}
+            <div class="pos-product-card"
+                 data-id="{{ prod.id }}"
+                 data-name="{{ prod.name }}"
+                 data-barcode="{{ prod.barcode or '' }}"
+                 data-category="{{ prod.category_name or '' }}"
+                 data-price="{{ prod.selling_price }}"
+                 data-stock="{{ prod.stock_quantity }}"
+                 data-image="{{ prod.image_url or '' }}"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Add {{ prod.name }} to cart">
+                
+                <div class="pos-img-box">
+                    {% if prod.image_url %}
+                    <img src="{{ url_for('static', filename=prod.image_url) }}" alt="{{ prod.name }}" loading="lazy">
+                    {% else %}
+                    <div class="pos-img-fallback">{{ prod.name[0]|upper }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="pos-product-name" title="{{ prod.name }}">{{ prod.name }}</div>
+                
+                <div class="pos-product-price">₱{{ "{:,.2f}".format(prod.selling_price) }}</div>
+
+                <div class="product-stock-label {% if prod.stock_quantity <= 5 %}stock-low{% endif %}">
+                    {{ prod.stock_quantity }} in stock
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Shopping Cart, Financial Totals, & Checkout -->
+    <div class="pos-right-panel">
+        <div class="pos-cart-card" id="posCartCard">
+            <!-- Cart Header -->
+            <div class="pos-cart-header">
+                <div>
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--soft-purple); display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <span>Current Order</span>
+                    </h3>
+                    <span id="cartItemCountBadge" class="badge badge-secondary" style="margin-top: 0.25rem;">0 items</span>
+                </div>
+
+                <button type="button" class="btn btn-secondary btn-sm" onclick="clearCart();" title="Clear all cart items">
+                    Clear Cart
+                </button>
+            </div>
+
+            <!-- Cart Items Container -->
+            <div class="cart-items-wrapper" id="cartItemsList">
+                <!-- Dynamically populated via pos.js -->
+            </div>
+
+            <!-- Empty State Display -->
+            <div class="cart-empty-state" id="cartEmptyState">
+                <div class="cart-empty-icon">🛍️</div>
+                <div style="font-weight: 600; color: var(--dark-text); margin-bottom: 0.25rem;">Your cart is empty</div>
+                <p style="font-size: 0.8rem;">Scan a barcode or click products to begin checkout.</p>
+            </div>
+
+            <!-- Cart Footer & Totals -->
+            <div class="pos-cart-footer">
+                <div class="cart-summary-line">
+                    <span style="color: var(--muted-text);">Subtotal:</span>
+                    <strong id="cartSubtotalDisplay">₱0.00</strong>
+                </div>
+
+                <div class="cart-summary-line">
+                    <span style="color: var(--muted-text);">Tax (12% VAT):</span>
+                    <span id="cartTaxDisplay">₱0.00</span>
+                </div>
+
+                <div class="cart-summary-line" style="align-items: center;">
+                    <span style="color: var(--muted-text);">Discount (₱):</span>
+                    <input type="number" step="0.01" min="0" id="discountInput" class="form-control" value="0.00" style="width: 90px; height: 28px; padding: 0.2rem 0.5rem; font-size: 0.825rem; text-align: right;">
+                </div>
+
+                <div class="cart-summary-line total-line">
+                    <span>Total Due:</span>
+                    <span id="cartGrandTotalDisplay">₱0.00</span>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="btnProceedCheckout" onclick="openCheckoutModal();" style="width: 100%; padding: 0.85rem; font-size: 1rem; margin-top: 0.75rem;" disabled>
+                    Proceed to Payment &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Mobile Order Summary Bar (Appears on mobile/tablet when items in cart) -->
+    <div class="pos-mobile-cart-bar" id="posMobileCartBar" onclick="document.getElementById('posCartCard').scrollIntoView({ behavior: 'smooth' });">
+        <div class="mobile-cart-info">
+            <span class="mobile-cart-count" id="mobileCartCount">0 items</span>
+            <span class="mobile-cart-dot">&bull;</span>
+            <span class="mobile-cart-total" id="mobileCartTotal">₱0.00</span>
+        </div>
+        <div class="mobile-cart-action">
+            <span>View Cart &amp; Pay &darr;</span>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 1: Cash Checkout & Payment
+     ========================================================================= -->
+<div class="modal-overlay" id="checkoutModal">
+    <div class="modal-dialog" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Cash Payment Settlement</h3>
+            <button type="button" class="modal-close-btn" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Total Due Headline -->
+            <div style="text-align: center; margin-bottom: 1.25rem;">
+                <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--muted-text); font-weight: 600;">Total Amount Due</div>
+                <div id="modalTotalDueDisplay" style="font-size: 2.2rem; font-weight: 800; color: var(--soft-purple); margin-top: 0.2rem;">
+                    ₱0.00
+                </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="form-group">
+                <label for="paymentMethodSelect" class="form-label required">Payment Method</label>
+                <select id="paymentMethodSelect" class="form-control">
+                    <option value="cash" selected>Cash (Primary POS Tender)</option>
+                    <option value="e_wallet">E-Wallet (GCash / Maya)</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="debit_card">Debit Card</option>
+                </select>
+            </div>
+
+            <!-- Amount Received Input -->
+            <div class="form-group">
+                <label for="amountTenderedInput" class="form-label required">Amount Tendered / Received (₱)</label>
+                <input type="number" step="0.01" min="0" id="amountTenderedInput" class="form-control" placeholder="0.00" style="font-size: 1.3rem; font-weight: 700; text-align: center;">
+            </div>
+
+            <!-- Quick Cash Preset Buttons -->
+            <div class="quick-cash-grid">
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash('exact')">Exact</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(100)">₱100</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(200)">₱200</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(500)">₱500</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(1000)">₱1,000</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(1500)">₱1,500</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(2000)">₱2,000</button>
+                <button type="button" class="btn-quick-cash" onclick="setQuickCash(5000)">₱5,000</button>
+            </div>
+
+            <!-- Change Calculation Box -->
+            <div class="change-box">
+                <div class="change-label">Calculated Change</div>
+                <div id="modalChangeDisplay" class="change-badge badge-invalid">Enter cash amount</div>
+                <div id="paymentFeedbackMsg" style="font-size: 0.775rem; color: var(--muted-text); margin-top: 0.35rem;">
+                    Enter customer cash tendered.
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnCompletePayment" onclick="submitCheckoutTransaction();" disabled>
+                Complete Sale & Print Receipt
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 2: Printable Customer Receipt
+     ========================================================================= -->
+<div class="modal-overlay" id="receiptModal">
+    <div class="modal-dialog" style="max-width: 440px;">
+        <div class="modal-header no-print">
+            <h3 class="modal-title">Transaction Receipt</h3>
+            <button type="button" class="modal-close-btn" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 1rem;">
+            <!-- Receipt Paper Layout -->
+            <div class="receipt-paper" id="printableReceiptPaper">
+                <div class="receipt-header">
+                    <h3>PROSFORA GIFT SHOP</h3>
+                    <div style="font-size: 0.85rem; margin-bottom: 0.25rem;">Boutique Gifts & Curated Treasures</div>
+                    <div style="font-size: 0.75rem; color: #555;">Tel: (02) 8123-4567 | VAT Reg: 123-456-789-000</div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-meta-line">
+                        <span>Invoice:</span>
+                        <strong id="receiptInvoiceNum"></strong>
+                    </div>
+                    <div class="receipt-meta-line">
+                        <span>Date:</span>
+                        <span id="receiptDateTime"></span>
+                    </div>
+                    <div class="receipt-meta-line">
+                        <span>Cashier:</span>
+                        <span id="receiptCashier"></span>
+                    </div>
+                </div>
+
+                <table class="receipt-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Item</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Price</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receiptItemsBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+
+                <div class="receipt-divider"></div>
+
+                <div class="receipt-summary-line">
+                    <span>Subtotal:</span>
+                    <span id="receiptSubtotal">₱0.00</span>
+                </div>
+                <div class="receipt-summary-line">
+                    <span>VAT (12%):</span>
+                    <span id="receiptTax">₱0.00</span>
+                </div>
+                <div class="receipt-summary-line">
+                    <span>Discount:</span>
+                    <span id="receiptDiscount">₱0.00</span>
+                </div>
+                <div class="receipt-total-line">
+                    <span>TOTAL DUE:</span>
+                    <span id="receiptTotal">₱0.00</span>
+                </div>
+                <div class="receipt-summary-line" style="margin-top: 0.35rem;">
+                    <span>Cash Tendered:</span>
+                    <span id="receiptTendered">₱0.00</span>
+                </div>
+                <div class="receipt-summary-line" style="font-weight: 700; font-size: 0.95rem;">
+                    <span>CHANGE:</span>
+                    <span id="receiptChange">₱0.00</span>
+                </div>
+
+                <div class="receipt-footer">
+                    <div style="font-weight: 600; margin-bottom: 0.35rem;">Thank you for supporting Prosfora Gift Shop!</div>
+                    <div>Please keep this receipt for returns or exchanges within 7 days.</div>
+                    <div style="margin-top: 0.6rem; font-size: 0.7rem; color: #777;">Powered by Prosfora POS System</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer no-print">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="printCurrentReceipt();">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>Print Receipt</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Prosfora Gift Shop POS{% endblock %}
+{% block header_title %}Executive Dashboard{% endblock %}
+{% block header_subtitle %}Real-time Store Performance & Inventory Overview{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Grid -->
+<div class="metrics-grid">
+    <!-- 1. Total Revenue -->
+    <div class="metric-card card-purple">
+        <div class="metric-info">
+            <h3>Total Sales</h3>
+            <div class="metric-value">₱{{ "{:,.2f}".format(metrics.total_sales or 0) }}</div>
+            <div class="metric-subtitle">Completed Transactions</div>
+        </div>
+        <div class="metric-icon-wrap icon-purple">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 2. Transactions Count -->
+    <div class="metric-card card-blue">
+        <div class="metric-info">
+            <h3>Transactions</h3>
+            <div class="metric-value">{{ metrics.total_transactions or 0 }}</div>
+            <div class="metric-subtitle">Processed Orders</div>
+        </div>
+        <div class="metric-icon-wrap icon-blue">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 3. Total Products -->
+    <div class="metric-card card-pink">
+        <div class="metric-info">
+            <h3>Catalog Items</h3>
+            <div class="metric-value">{{ metrics.total_products or 0 }}</div>
+            <div class="metric-subtitle">{{ metrics.total_categories or 0 }} Active Categories</div>
+        </div>
+        <div class="metric-icon-wrap icon-pink">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 4. Low Stock Alerts -->
+    <div class="metric-card card-warning">
+        <div class="metric-info">
+            <h3>Low Stock Alert</h3>
+            <div class="metric-value">{{ metrics.low_stock_count or 0 }}</div>
+            <div class="metric-subtitle">At or Below Minimum Level</div>
+        </div>
+        <div class="metric-icon-wrap icon-warning">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- 5. Total Inventory Valuation -->
+    <div class="metric-card card-purple">
+        <div class="metric-info">
+            <h3>Inventory Valuation</h3>
+            <div class="metric-value">₱{{ "{:,.2f}".format(metrics.inventory_value or 0) }}</div>
+            <div class="metric-subtitle">Total Cost Value in Stock</div>
+        </div>
+        <div class="metric-icon-wrap icon-purple">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- Main Row: Recent Sales & Low Stock List -->
+<div class="responsive-split-grid dashboard-split">
+    <!-- Recent Transactions -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Recent Transactions</span>
+            </div>
+            <a href="{{ url_for('products_list') }}" class="btn btn-secondary btn-sm">Explore Catalog</a>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive" style="border: none;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Cashier</th>
+                            <th>Date & Time</th>
+                            <th>Total</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_sales %}
+                            {% for sale in recent_sales %}
+                            <tr>
+                                <td><strong>{{ sale.invoice_number }}</strong></td>
+                                <td>{{ sale.cashier_name or 'Cashier' }}</td>
+                                <td>{{ sale.created_at }}</td>
+                                <td><strong>₱{{ "{:,.2f}".format(sale.total_amount) }}</strong></td>
+                                <td><span class="badge badge-info">{{ sale.payment_method|default('Cash')|upper }}</span></td>
+                                <td><span class="badge badge-success">{{ sale.payment_status|capitalize }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--muted-text); padding: 2rem;">
+                                    No sales transactions recorded yet.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Priority List -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--warning);">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Restock Attention</span>
+            </div>
+            <a href="{{ url_for('products_list') }}" class="btn btn-outline-primary btn-sm">Manage</a>
+        </div>
+        <div class="card-body" style="padding: 1rem;">
+            {% if low_stock_items %}
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% for item in low_stock_items %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-radius: var(--radius-md); background-color: var(--light-pink-subtle); border-left: 3px solid var(--warning);">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.875rem;">{{ item.name }}</div>
+                            <div style="font-size: 0.75rem; color: var(--muted-text);">Min: {{ item.min_stock_level }} units</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge badge-warning">{{ item.stock_quantity }} Left</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 2rem; color: var(--muted-text);">
+                    <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎉</p>
+                    <p>All product stocks are currently healthy above minimum thresholds.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Category Distribution Overview -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span>Category Inventory Summary</span>
+        </div>
+        <a href="{{ url_for('categories_list') }}" class="btn btn-secondary btn-sm">Manage Categories</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive" style="border: none;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category Name</th>
+                        <th>Product Count</th>
+                        <th>Total Units in Stock</th>
+                        <th>Category Valuation (Cost)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if category_summary %}
+                        {% for cat in category_summary %}
+                        <tr>
+                            <td><strong>{{ cat.name }}</strong></td>
+                            <td>{{ cat.product_count }} items</td>
+                            <td>{{ cat.total_units or 0 }} units</td>
+                            <td>₱{{ "{:,.2f}".format(cat.category_value or 0) }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--muted-text); padding: 1.5rem;">
+                                No categories created yet.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

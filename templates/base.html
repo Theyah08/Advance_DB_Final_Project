@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Prosfora Gift Shop POS{% endblock %}</title>
+    
+    <!-- Custom CSS Theme -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="brand-section">
+                <div class="brand-icon">P</div>
+                <div>
+                    <span class="brand-name">Prosfora</span>
+                    <span class="brand-tag">Gift Shop POS</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <span class="nav-label">Main Modules</span>
+                
+                {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('products_list') }}" class="nav-item {% if active_page == 'products' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>Products</span>
+                </a>
+
+                {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('categories_list') }}" class="nav-item {% if active_page == 'categories' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span>Categories</span>
+                </a>
+
+                <a href="{{ url_for('inventory_overview') }}" class="nav-item {% if active_page == 'inventory' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span>Inventory</span>
+                </a>
+                {% endif %}
+
+                <span class="nav-label">Point of Sale & Transactions</span>
+                <a href="{{ url_for('pos_terminal') }}" class="nav-item {% if active_page == 'pos' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <span>POS Terminal</span>
+                </a>
+
+                <a href="{{ url_for('sales_history') }}" class="nav-item {% if active_page == 'sales' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <span>Sales History</span>
+                </a>
+
+                {% if session.get('role') == 'admin' %}
+                <span class="nav-label">Analytics & Reports</span>
+                <a href="{{ url_for('reports_overview') }}" class="nav-item {% if active_page == 'reports' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>Reports & Analytics</span>
+                </a>
+
+                <span class="nav-label">System Administration</span>
+                <a href="{{ url_for('users_list') }}" class="nav-item {% if active_page == 'users' %}active{% endif %}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>User Accounts</span>
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-badge">
+                    <div class="user-avatar">
+                        {{ session.get('username', 'U')[0]|upper }}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ session.get('full_name', session.get('username')) }}</div>
+                        <span class="user-role-badge badge-{{ session.get('role', 'cashier') }}">
+                            {{ session.get('role', 'Cashier')|capitalize }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <div class="main-wrapper">
+            <!-- Top Header Navbar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle-btn" id="menuToggle" aria-label="Toggle navigation">
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div class="page-title-box">
+                        <h1>{% block header_title %}Prosfora Gift Shop{% endblock %}</h1>
+                        <p class="page-subtitle">{% block header_subtitle %}Point of Sale & Inventory Management{% endblock %}</p>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="db-status-pill">
+                        <span class="status-dot"></span>
+                        <span>{{ g.db_engine_name }}</span>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm" onclick="return confirmAction('Log out from Prosfora POS?');">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Main Content Container -->
+            <main class="content-body">
+                <!-- Flash Notification Messages -->
+                <div class="flash-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    <span>{{ message }}</span>
+                                    <button type="button" class="alert-close" aria-label="Close notification">&times;</button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
